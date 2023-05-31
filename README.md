@@ -1,5 +1,6 @@
 ## youtubeの動画をyt-dlpを使って音声としてダウンロードするスクリプト
-exeだけダウンロードしても動かないのでクローンするように.  
+exeだけダウンロードしても動かないのでクローンするように.   
+(ffmpgegとyt-dlpをインスコしてあればexe単体で動きます)  
 
 ```
 git clone https://github.com/soburi59/yt-dlp-music.git
