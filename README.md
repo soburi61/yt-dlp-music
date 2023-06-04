@@ -9,11 +9,12 @@ git clone https://github.com/soburi59/yt-dlp-music.git
 保存場所は最初に`Target path`と聞かれますのでお好みの場所を選択してください.<br />
 デフォルトではユーザーのミュージックの中にMusicフォルダを作りそこの中に保存します.<br />
 
-次に`movie url`と聞かれますので動画のurlやurlをコンマ区切りで管理しているファイルを選択してください。<br />
+次に`movie url`と聞かれますので動画のurlかプレイリストのurlを入力.<br />
+何も入力しないとmusic.txtを読み込みます.music.txtは改行区切りで動画urlを並べるように.<br />
 <br>
 再生リストのurlを入力した場合,再生リストのどこまでをダウンロードするかを聞かれます.  <br />
-(youtubeなどのプレイリストは動画idを含めてしまうと、正常に作動しません。  
-そのため、v=~~の部分を取り除くか、playlist?list=~~のようにurlを指定してください。) 
+(youtubeなどのプレイリストは動画idを含めてしまうと、正常に作動しません.  
+そのため、v=~~の部分を取り除くか、playlist?list=~~のようにurlを指定してください.) 
 
 > **Warning**
 > youtubeに上がっているものをダウンロードするのは規約違反なので自己責任.  
@@ -24,3 +25,4 @@ git clone https://github.com/soburi59/yt-dlp-music.git
 #### 更新
 2023/4/5 ちゃんと動くようにしました ffmpegとyt-dlpのexeを入れています
 2023/6/5 ありがたいことに改良してくれましたので https://github.com/FoxxCool/yt-dlp-music-fork を採用
+2023/6/5 少し変更(コンマでなく改行区切りで読み込むように,表示をわかりやすく,入力なしでmusic.txtを読み込むように)
