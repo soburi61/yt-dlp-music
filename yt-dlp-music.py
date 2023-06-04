@@ -2,7 +2,7 @@
 """
 Created on 2023/4/4
 Edited on 2023/4/17
-Make Changed on 2023/6/5
+Changed on 2023/6/5
 @author: soburi
 """
 import sys, subprocess
