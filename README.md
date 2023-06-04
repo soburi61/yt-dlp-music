@@ -23,6 +23,10 @@ git clone https://github.com/soburi59/yt-dlp-music.git
 > 以上のことを踏まえて使用すること.  
 
 #### 更新
-2023/4/5 ちゃんと動くようにしました ffmpegとyt-dlpのexeを入れています
+2023/4/5 自分の環境でしか動かなかったのでちゃんと動くようにしました ffmpegとyt-dlpのexeを入れています
 2023/6/5 ありがたいことに改良してくれましたので https://github.com/FoxxCool/yt-dlp-music-fork を採用
 2023/6/5 少し変更(コンマでなく改行区切りで読み込むように,表示をわかりやすく,入力なしでmusic.txtを読み込むように)
+
+#### 詳細
+pipenvを用いて各種ライブラリをインストールしてpyinstallerにて.exe化
+env環境は残しているのでプログラムを改変したなら自分で.exe化できるようにしています
