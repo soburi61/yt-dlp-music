@@ -6,6 +6,8 @@ Changed on 2023/6/5
 @author: soburi
 """
 import sys, subprocess
+import re
+
 while(True):
     path = input("(Default:[Enter] →~/Music/Music)\nTarget path:") or "~/Music/Music"
 
@@ -13,13 +15,15 @@ while(True):
         break
 
     url = input("(play list url ok)\n(Default:[Enter]→import music.txt)\nmovie url:")
-    cmd = f".\yt-dlp\yt-dlp.exe --ffmpeg-location ./ffmpeg/ffmpeg.exe --parse-metadata artist:%(channel)s -o {path:s}/%(title)s -f b --add-metadata --extract-audio --embed-thumbnail --audio-format mp3 "
+    cmd = f".\yt-dlp\yt-dlp.exe --ffmpeg-location ./ffmpeg/ffmpeg.exe --parse-metadata artist:%(channel)s -o %(title)s -f b --add-metadata --extract-audio --embed-thumbnail --audio-format mp3 "
     
     list = []
-    if "https://" in url:
+    if re.match("https?://[\w!\?/\+\-_~=;\.,\*&@#\$%\(\)'\[\]]+", url):
         tmp = url
         if "list=" in url:
-            #TODO: もしlistだけではなくvideoも指定してしまっていたら正規表現など使って改変を行う。 (ニコニコなども考慮する)
+            if re.match('http(s)?:\/\/(www.youtube.com\/|youtu.be\/)', url):
+                tmp = "https://youtube.com/playlist?list="+re.findall(r"(?:list=|\/)([0-9A-Za-z_-]{34}).*", url)[0]
+                url = tmp
             end = int(input("(example:3→download the 3 lastest music)\n(Default:[Enter]→download all)\n end num:") or 0)
             if end != 0:
                 tmp = f"--playlist-end {end} --yes-playlist {url}"
@@ -27,7 +31,7 @@ while(True):
 
     else:
         try:
-            with open('music.txt', mode='r') as f:
+            with open(url, mode='r') as f:
                 list = f.readlines()
         except:
             print("nothing text file.")
@@ -36,4 +40,3 @@ while(True):
     for urls in list:
         subprocess.run('echo '+cmd+urls, shell=True)
         subprocess.run(cmd+urls, shell=True) 
-    
