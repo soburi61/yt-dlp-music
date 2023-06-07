@@ -15,7 +15,7 @@ while(True):
         break
 
     url = input("(play list url ok)\n(Default:[Enter]→import music.txt)\nmovie url:")
-    cmd = f".\yt-dlp\yt-dlp.exe --ffmpeg-location ./ffmpeg/ffmpeg.exe --parse-metadata artist:%(channel)s -o %(title)s -f b --add-metadata --extract-audio --embed-thumbnail --audio-format mp3 "
+    cmd = f".\yt-dlp\yt-dlp.exe --ffmpeg-location ./ffmpeg/ffmpeg.exe --parse-metadata artist:%(channel)s -o {path:s}/%(title)s -f b --add-metadata --extract-audio --embed-thumbnail --audio-format mp3 "
     
     list = []
     if re.match("https?://[\w!\?/\+\-_~=;\.,\*&@#\$%\(\)'\[\]]+", url):
