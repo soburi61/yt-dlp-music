@@ -20,8 +20,13 @@ git clone https://github.com/soburi59/yt-dlp-music.git
 > youtubeに上がっているものをダウンロードするのは規約違反なので自己責任.  
 > 違法アップロードをしてあるものを知ってダウンロードするのは違法.  
 > 公式が上げている(アーティスト本人など)ものをダウンロードするのは規約違反だが違法ではない.再配布はもちろん違法.  
-> 以上のことを踏まえて使用すること.  
+> 以上のことを踏まえて使用すること.
 
+> **Note** 
+> エラーでダウンロードできないときはyt-dlpフォルダ内のyt-dlp.exeを以下サイトからダウンロードして差し替えてください.
+> https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe
+> 
+>  
 #### 更新
 2023/4/5 自分の環境でしか動かなかったのでちゃんと動くようにしました ffmpegとyt-dlpのexeを入れています
 2023/6/5 ありがたいことに改良してくれましたので https://github.com/FoxxCool/yt-dlp-music-fork を採用
