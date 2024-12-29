@@ -1,15 +1,20 @@
 ## youtubeの動画をyt-dlpを使って音声としてダウンロードするスクリプト
 exeだけダウンロードしても動かないのでクローンするように.   
-(ffmpgegとyt-dlpをインスコしてあればexe単体で動きます)  
 
 ```
 git clone https://github.com/soburi59/yt-dlp-music.git
 ```
 
-<br>
-再生リストのurlを入力した場合,再生リストのどこまでをダウンロードするかを聞かれます.  <br />
-(youtubeなどのプレイリストは動画idを含めてしまうと、正常に作動しません.  
-そのため、v=~~の部分を取り除くか、playlist?list=~~のようにurlを指定してください.) 
+## 準備:ffmpegのダウンロード&格納
+[https://ffmpeg.org/download.html](https://ffmpeg.org/download.html)
+解凍し、ffmpegディレクトリ以下に格納.  
+すでにffmpegがある場合は、そのパスをsetting.iniのffmpegのexecに設定してください.  
+
+## 使用方法
+exeのショートカットを適当な場所に作成して実行.
+download_links_input.txtにダウンロードしたい動画のurlを改行区切りで記載することで複数の動画をダウンロードすることもできます.
+
+## 使用上の注意  
 
 > **Warning**
 > youtubeに上がっているものをダウンロードするのは規約違反なので自己責任.  

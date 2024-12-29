@@ -51,6 +51,7 @@ class LogManager:
         if message and message.strip():
             if '[download]' in message:
                 clean_message = message.replace('[DEBUG] ', '')
+                # ダウンロードは1行で十分だから上書きで表示
                 print(f"\r{clean_message}", end='', flush=True)
             else:
                 clean_message = message.replace('[DEBUG] ', '')
@@ -135,12 +136,9 @@ class YTDLPManager:
 
     def is_playlist(self, url: str) -> bool:
         """URLがプレイリストかどうかを判定"""
-        try:
-            with yt_dlp.YoutubeDL({'quiet': True, 'extract_flat': True}) as ydl:
-                info = ydl.extract_info(url, download=False)
-                return bool(info and 'entries' in info)
-        except Exception as e:
-            log_manager.error(f"Error checking playlist: {str(e)}")
+        if "list=" in url:
+            return True
+        else:
             return False
 
     def update(self) -> None:
@@ -230,7 +228,7 @@ def main():
     while True:
         try:
             log_manager.info("\nEnter YouTube URL (playlist or video link) or Press Enter to download from download_links_input.txt")
-            url = input("URL > ").strip()
+            url = input("URL >").strip()
             if url:
                 if url.lower() == 'exit':
                     break
