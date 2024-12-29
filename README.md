@@ -5,12 +5,7 @@ exeだけダウンロードしても動かないのでクローンするよう�
 ```
 git clone https://github.com/soburi59/yt-dlp-music.git
 ```
-クローンしたらダブルクリックで使えます.<br />
-保存場所は最初に`Target path`と聞かれますのでお好みの場所を選択してください.<br />
-デフォルトではユーザーのミュージックの中にMusicフォルダを作りそこの中に保存します.<br />
 
-次に`movie url`と聞かれますので動画のurlかプレイリストのurlを入力.<br />
-何も入力しないとmusic.txtを読み込みます.music.txtは改行区切りで動画urlを並べるように.<br />
 <br>
 再生リストのurlを入力した場合,再生リストのどこまでをダウンロードするかを聞かれます.  <br />
 (youtubeなどのプレイリストは動画idを含めてしまうと、正常に作動しません.  
@@ -31,7 +26,12 @@ git clone https://github.com/soburi59/yt-dlp-music.git
 2023/4/5 自分の環境でしか動かなかったのでちゃんと動くようにしました ffmpegとyt-dlpのexeを入れています
 2023/6/5 ありがたいことに改良してくれましたので https://github.com/FoxxCool/yt-dlp-music-fork を採用
 2023/6/5 少し変更(コンマでなく改行区切りで読み込むように,表示をわかりやすく,入力なしでmusic.txtを読み込むように)
+2024/12/29 大幅に変更(設定ファイルをiniに変更,ダウンロードリンクのファイルをdownload_links_input.txtに変更)
 
 #### 詳細
-pipenvを用いて各種ライブラリをインストールしてpyinstallerにて.exe化
-env環境は残しているのでプログラムを改変したなら自分で.exe化できるようにしています
+プログラムを改変した場合は以下を実行
+```
+pipenv install
+pyinstaller --onefile yt-dlp-music.py
+```
+
