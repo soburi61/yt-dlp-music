@@ -17,6 +17,8 @@ DEFAULT_CONFIG = {
         'file': 'download_links_input.txt'
     },
     'yt-dlp': {
+        'type': 0,
+        'exec': './yt-dlp/yt-dlp.exe',
         'options': '{}',
         'auto-update': 'true'
     },
@@ -37,18 +39,18 @@ class LogManager:
     def _initial_messages(self):
         messages = [
             'yt-dlp-music Video Download Tool',
-            'Copyright (C) 2023,2024 soburi. / test20140',
-            '',
-            'Copyright (c) 2000-2024 FFmpeg',
+            'Copyright (C) 2023-2025 soburi. / test20140',
+            ' ',
+            'Copyright (c) 2000-2025 FFmpeg',
             'Copyright (c) 2023      mutagen',
             'Copyright (c) 2024      pycryptodome',
-            ''
+            ' '
         ]
         for msg in messages:
             self.info(msg)
 
     def debug(self, message: str) -> None:
-        if message and message.strip():
+        if message and message.replace('\n', '\\n'):
             if '[download]' in message:
                 clean_message = message.replace('[DEBUG] ', '')
                 # ダウンロードは1行で十分だから上書きで表示
@@ -58,23 +60,23 @@ class LogManager:
                 print(clean_message)
 
     def info(self, message: str) -> None:
-        if message and message.strip():
+        if message and message.replace('\n', '\\n'):
             if '[download]' in message:
                 print(f"\r{message}", end='', flush=True)
             else:
                 print(message)
 
     def warning(self, message: str) -> None:
-        if message and message.strip():
+        if message and message.replace('\n', '\\n'):
             print(f"[WARNING] {message}")
 
     def error(self, message: str) -> None:
-        if message and message.strip():
+        if message and message.replace('\n', '\\n'):
             print(f"[ERROR] {message}")
 
 @dataclass
 class Movie:
-    """動画情報を保持するクラス"""
+    """動画情報を保持するクラス。使うかもしれない"""
     title: str = 'DELETED MOVIE'
     url: str = ''
     uploader: str = ''
@@ -98,41 +100,73 @@ class Movie:
 
 class YTDLPManager:
     """yt-dlpの操作を管理するクラス"""
-    def __init__(self, config: Dict[str, Any], ffmpeg_config: Dict[str, Any], output_path: str):
-        self.options = config.copy()
+    def __init__(self, config: str, ffmpeg_config: Dict[str, Any], output_path: str, type: int, exec: str):
+        self.options = config
+        self.type = int(type)
+        self.exec = exec
         self._setup_options(ffmpeg_config, output_path)
-        self.ydl = yt_dlp.YoutubeDL(self.options)
+        if self.type == 1:
+            self.ydl = yt_dlp.YoutubeDL(self.options)
 
     def _setup_options(self, ffmpeg_config: Dict[str, Any], output_path: str) -> None:
         """yt-dlpのオプションを設定"""
-        if ffmpeg_config.get('format'):
-            self.options.setdefault('postprocessors', []).extend([{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': ffmpeg_config['format'],
-                'preferredquality': ffmpeg_config.get('bitrate', '192')
-            }])
+        if self.type == 0:
+            if ffmpeg_config.get('format'):
+                self.options += " --format ba"
+                self.options += " --format-sort abr,acodec"
+                self.options += " --format-sort-force"
+                self.options += " --extract-audio"
+                self.options += " --audio-format "+ffmpeg_config['format']
+                self.options += " --audio-quality "+ffmpeg_config.get('bitrate', '192')
 
-        self.options.update({
-            'logger': log_manager,
-            'progress': True,
-            'ffmpeg_location': ffmpeg_config['exec'],
-            'outtmpl': os.path.join(output_path, '%(title)s.%(ext)s'),
-            'quiet': False,
-            'no_progress': False
-        })
+                self.options += " --ffmpeg-location "+ffmpeg_config['exec']
+                self.options += " --output "+os.path.join(output_path, '%(title)s.%(ext)s')
+
+        elif self.type == 1:
+            self.options = json.loads(self.options)
+            if ffmpeg_config.get('format'):
+                self.options["format"] = "ba"
+                self.options["format_sort"] = ["abr", "acodec"]
+                self.options["format_sort_force"] = True
+                self.options.setdefault('postprocessors', []).extend([{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': ffmpeg_config['format'],
+                    'preferredquality': ffmpeg_config.get('bitrate', '192')
+                }])
+
+            self.options.update({
+                'logger': log_manager,
+                'ffmpeg_location': ffmpeg_config['exec'],
+                'outtmpl': os.path.join(output_path, '%(title)s.%(ext)s'),
+            })
 
     def download(self, url: str, playlist_range: Optional[Tuple[int, int]] = None) -> None:
         """URLからダウンロードを実行"""
-        options = self.options.copy()
-        if playlist_range:
-            start, end = playlist_range
-            options['playlist_items'] = f'{start}-{end}'
+        # TODO: Pipeを利用したダウンロード
+        if self.type == 0:
+            options = self.options
+            if playlist_range:
+                start, end = playlist_range
+                options += f' --playlist-items {start}-{end}'
+            result = subprocess.Popen(self.exec +" "+ options +" "+ url, stdout=subprocess.PIPE, text=True)
+            while result.poll() == None:
+                line = result.stdout.readline()
+                log_manager.info(line.strip())
+            result.wait()
+            if not result.returncode == 0:
+                log_manager.info("Error during download: except 0")
 
-        try:
-            with yt_dlp.YoutubeDL(options) as ydl:
-                ydl.download([url])
-        except Exception as e:
-            log_manager.error(f"Error during download: {str(e)}")
+        elif self.type == 1:
+            options = self.options.copy()
+            if playlist_range:
+                start, end = playlist_range
+                options['playlist_items'] = f'{start}-{end}'
+
+            try:
+                with yt_dlp.YoutubeDL(options) as ydl:
+                    ydl.download([url])
+            except Exception as e:
+                log_manager.error(f"Error during download: {str(e)}")
 
     def is_playlist(self, url: str) -> bool:
         """URLがプレイリストかどうかを判定"""
@@ -143,10 +177,15 @@ class YTDLPManager:
 
     def update(self) -> None:
         """yt-dlpの更新を実行"""
-        try:
-            yt_dlp.update.Updater(self.ydl).update()
-        except Exception as e:
-            log_manager.warning(f"Error checking for updates: {str(e)}")
+        if self.type == 0:
+            result = subprocess.run([self.exec, "-U"], capture_output=True, text=True)
+            if not result.returncode == 0:
+                log_manager.info("Error checking for updates: except 0")
+        elif self.type == 1:
+            try:
+                yt_dlp.update.Updater(self.ydl).update()
+            except Exception as e:
+                log_manager.warning(f"Error checking for updates: {str(e)}")
 
 def load_config(file_path: str) -> Dict[str, Any]:
     """設定ファイルを読み込む"""
@@ -162,7 +201,9 @@ def load_config(file_path: str) -> Dict[str, Any]:
             'file': config.get('common', 'file', fallback=DEFAULT_CONFIG['common']['file'])
         },
         'yt-dlp': {
-            'options': json.loads(config.get('yt-dlp', 'options', fallback=DEFAULT_CONFIG['yt-dlp']['options'])),
+            'type': config.get('yt-dlp', 'type', fallback=DEFAULT_CONFIG['yt-dlp']['type']),
+            'exec': config.get('yt-dlp', 'exec', fallback=DEFAULT_CONFIG['yt-dlp']['exec']),
+            'options': config.get('yt-dlp', 'options', fallback=DEFAULT_CONFIG['yt-dlp']['options']),
             'auto_update': config.getboolean('yt-dlp', 'auto-update', fallback=DEFAULT_CONFIG['yt-dlp']['auto-update'] == 'true')
         },
         'ffmpeg': {
@@ -222,8 +263,14 @@ def main():
     ytdlp = YTDLPManager(
         config['yt-dlp']['options'],
         config['ffmpeg'],
-        config['common']['path']
+        config['common']['path'],
+        config['yt-dlp']['type'],
+        config['yt-dlp']['exec']
     )
+
+    # YT-DLPの更新
+    if config['yt-dlp']['auto_update']:
+        ytdlp.update()
 
     while True:
         try:
