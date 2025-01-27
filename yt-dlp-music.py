@@ -5,7 +5,6 @@ yt-dlp-music: YouTube動画のダウンロードと音声抽出を行うツー�
 from dataclasses import dataclass
 from configparser import ConfigParser
 from typing import Optional, Dict, Any, Tuple
-import yt_dlp
 import json
 import os
 import re
@@ -106,6 +105,7 @@ class YTDLPManager:
         self.exec = exec
         self._setup_options(ffmpeg_config, output_path)
         if self.type == 1:
+            import yt_dlp
             self.ydl = yt_dlp.YoutubeDL(self.options)
 
     def _setup_options(self, ffmpeg_config: Dict[str, Any], output_path: str) -> None:
