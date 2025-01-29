@@ -13,7 +13,9 @@ import subprocess
 DEFAULT_CONFIG = {
     'common': {
         'path': './out',
-        'file': 'download_links_input.txt'
+        'path-check': 'true',
+        'input': 'download_links_input.txt',
+        'input-check': 'true'
     },
     'yt-dlp': {
         'type': 0,
@@ -30,6 +32,8 @@ DEFAULT_CONFIG = {
         'range': '0'
     }
 }
+URL_PATTEN = r'^[a-zA-Z][a-zA-Z\d+\-.]*://(?:\w+\.)?\w+\.\w+(/.*)?$'
+FILE_PATTEN = r'^.*\.[A-Za-z]{2,4}$'
 
 class LogManager:
     def __init__(self):
@@ -99,16 +103,17 @@ class Movie:
 
 class YTDLPManager:
     """yt-dlpの操作を管理するクラス"""
-    def __init__(self, config: str, ffmpeg_config: Dict[str, Any], output_path: str, type: int, exec: str):
+    # TODO: オブジェクト指向でやると管理しやすいかもしれない
+    def __init__(self, config: str, ffmpeg_config: Dict[str, Any], type: int, exec: str):
         self.options = config
         self.type = int(type)
         self.exec = exec
-        self._setup_options(ffmpeg_config, output_path)
+        self._setup_options(ffmpeg_config)
         if self.type == 1:
             import yt_dlp
             self.ydl = yt_dlp.YoutubeDL(self.options)
 
-    def _setup_options(self, ffmpeg_config: Dict[str, Any], output_path: str) -> None:
+    def _setup_options(self, ffmpeg_config: Dict[str, Any]) -> None:
         """yt-dlpのオプションを設定"""
         if self.type == 0:
             if ffmpeg_config.get('format'):
@@ -118,9 +123,7 @@ class YTDLPManager:
                 self.options += " --extract-audio"
                 self.options += " --audio-format "+ffmpeg_config['format']
                 self.options += " --audio-quality "+ffmpeg_config.get('bitrate', '192')
-
                 self.options += " --ffmpeg-location "+ffmpeg_config['exec']
-                self.options += " --output "+os.path.join(output_path, '%(title)s.%(ext)s')
 
         elif self.type == 1:
             self.options = json.loads(self.options)
@@ -133,16 +136,14 @@ class YTDLPManager:
                     'preferredcodec': ffmpeg_config['format'],
                     'preferredquality': ffmpeg_config.get('bitrate', '192')
                 }])
-
             self.options.update({
                 'logger': log_manager,
-                'ffmpeg_location': ffmpeg_config['exec'],
-                'outtmpl': os.path.join(output_path, '%(title)s.%(ext)s'),
+                'ffmpeg_location': ffmpeg_config['exec']
             })
 
     def download(self, url: str, playlist_range: Optional[Tuple[int, int]] = None) -> None:
         """URLからダウンロードを実行"""
-        # TODO: Pipeを利用したダウンロード
+        # TODO: Pipeを利用したダウンロード　エラー発生時に一時ファイルを自動削除
         if self.type == 0:
             options = self.options
             if playlist_range:
@@ -161,7 +162,6 @@ class YTDLPManager:
             if playlist_range:
                 start, end = playlist_range
                 options['playlist_items'] = f'{start}-{end}'
-
             try:
                 with yt_dlp.YoutubeDL(options) as ydl:
                     ydl.download([url])
@@ -177,15 +177,50 @@ class YTDLPManager:
 
     def update(self) -> None:
         """yt-dlpの更新を実行"""
+        code = 0
         if self.type == 0:
             result = subprocess.run([self.exec, "-U"], capture_output=True, text=True)
-            if not result.returncode == 0:
-                log_manager.info("Error checking for updates: except 0")
+            code = result.returncode
         elif self.type == 1:
             try:
                 yt_dlp.update.Updater(self.ydl).update()
+                code = 0
             except Exception as e:
-                log_manager.warning(f"Error checking for updates: {str(e)}")
+                code = 1
+
+        if code == 0:
+            log_manager.info(f"{'YT-DLP Update':20} Check {'':8}  OK")
+        else:
+            log_manager.error(f"{'YT-DLP Update':20} Check {'':8}  ERROR")
+
+    def params(self, key, value):
+        if self.type == 0:
+            options = str(self.options)
+            start = options.find(key)
+            if start == -1:
+                self.options = options +" "+key+" "+value
+                return
+            end = options.find('--', start + len(key))
+            if end == -1:
+                end = len(options)
+            self.options = options[:start-1] + options[end+1:] +" "+key+" "+value
+
+        elif self.type == 1:
+            #_s_neste(self.ydl.params, key, value)
+            #self.ydl._parse_outtmpl()
+            self.options.update({
+                key: value
+            })
+
+
+def _s_neste(dic, keys, value):
+	key = keys[0]
+	if len(keys) == 1:
+		dic[key] = value
+	else:
+		if key not in dic:
+			dic[key] = {}
+		_s_neste(dic[key], keys[1:], value)
 
 def load_config(file_path: str) -> Dict[str, Any]:
     """設定ファイルを読み込む"""
@@ -198,10 +233,12 @@ def load_config(file_path: str) -> Dict[str, Any]:
     return {
         'common': {
             'path': config.get('common', 'path', fallback=DEFAULT_CONFIG['common']['path']),
-            'file': config.get('common', 'file', fallback=DEFAULT_CONFIG['common']['file'])
+            'path-check': config.getboolean('common', 'path-check', fallback=DEFAULT_CONFIG['common']['path-check']),
+            'input': config.get('common', 'input', fallback=DEFAULT_CONFIG['common']['input']),
+            'input-check': config.getboolean('common', 'input-check', fallback=DEFAULT_CONFIG['common']['input-check'])
         },
         'yt-dlp': {
-            'type': config.get('yt-dlp', 'type', fallback=DEFAULT_CONFIG['yt-dlp']['type']),
+            'type': config.getint('yt-dlp', 'type', fallback=DEFAULT_CONFIG['yt-dlp']['type']),
             'exec': config.get('yt-dlp', 'exec', fallback=DEFAULT_CONFIG['yt-dlp']['exec']),
             'options': config.get('yt-dlp', 'options', fallback=DEFAULT_CONFIG['yt-dlp']['options']),
             'auto_update': config.getboolean('yt-dlp', 'auto-update', fallback=DEFAULT_CONFIG['yt-dlp']['auto-update'] == 'true')
@@ -233,7 +270,7 @@ def check_ffmpeg(ffmpeg_path: str) -> None:
         else:
             log_manager.error(f"{'FFmpeg':20} Check {'':8}  ERROR")
     except Exception as e:
-        log_manager.error(f"Error checking FFmpeg: {str(e)}")
+        log_manager.warning(f"Error checking FFmpeg: {str(e)}")
 
 def get_playlist_range(range_config: str) -> Optional[Tuple[int, int]]:
     """プレイリストの範囲を取得"""
@@ -252,6 +289,26 @@ def get_playlist_range(range_config: str) -> Optional[Tuple[int, int]]:
                 
         log_manager.warning("Invalid range format. Please enter '0' for all videos or use format like '1-10'")
 
+def get_links_input(path: str) -> []:
+    """ファイルからurl一覧を取得"""
+    lst = []
+    with open(path, 'r', encoding='utf-8') as f:
+        for line in f:
+            lst.append(line.strip())
+    return lst
+
+def fls_con() -> None:
+    """コンソールのバッファ削除"""
+    if os.name == 'nt':
+        import msvcrt
+        while msvcrt.kbhit():
+            msvcrt.getch()
+    elif os.name == 'posix':
+        import select
+        while select.select([sys.stdin.fileno()], [], [], 0.0)[0]:
+            os.read(sys.stdin.fileno(), 4096)
+
+
 def main():
     # 設定ファイルの読み込み
     config = load_config('setting.ini')
@@ -263,7 +320,6 @@ def main():
     ytdlp = YTDLPManager(
         config['yt-dlp']['options'],
         config['ffmpeg'],
-        config['common']['path'],
         config['yt-dlp']['type'],
         config['yt-dlp']['exec']
     )
@@ -272,32 +328,50 @@ def main():
     if config['yt-dlp']['auto_update']:
         ytdlp.update()
 
+    _path = config['common']['path']
+    _url = config['common']['input']
     while True:
         try:
-            log_manager.info("\nEnter YouTube URL (playlist or video link) or Press Enter to download from download_links_input.txt")
-            url = input("URL >").strip()
-            if url:
-                if url.lower() == 'exit':
+            fls_con()
+            # 対話
+            if config['common']['path-check']:
+                log_manager.info(f"\nEnter directory location or Press Enter to use {_path}")
+                path = input("Location >").strip() or _path
+                if path.lower() == 'exit':
                     break
+            if config['common']['input-check']:
+                log_manager.info(f"\nEnter YouTube URL (playlist or video link) or Press Enter to use {_url}")
+                url = input("URL >").strip() or _url
+                #if mov.lower() == 'exit':
+                #    break
 
-                if ytdlp.is_playlist(url):
-                    range_tuple = get_playlist_range(config['playlist']['range'])
-                    ytdlp.download(url, range_tuple)
-                else:
-                    ytdlp.download(url)
+            lst = []
+            # 整理
+            if config['yt-dlp']['type'] == 0:
+                ytdlp.params('--output', os.path.join(path, '%(title)s.%(ext)s'))
+            elif config['yt-dlp']['type'] == 1:
+                outtmpl = {
+    		        'default': os.path.join(path, '%(title)s.%(ext)s'), 
+                    'chapter': os.path.join(path, '%(title)s - %(section_number)03d %(section_title)s [%(id)s].%(ext)s') 
+                }
+                ytdlp.params(['outtmpl'], outtmpl)
+
+            if (re.match(FILE_PATTEN, url)):
+                lst = get_links_input(url)
+            elif (re.match(URL_PATTEN, url)):
+                lst = [url]
             else:
-                with open('download_links_input.txt', 'r', encoding='utf-8') as f:
-                    for line in f:
-                        url = line.strip()
-                        if not url:
-                            continue
-                        if url.lower() == 'exit':
-                            break
-                        if ytdlp.is_playlist(url):
-                            range_tuple = get_playlist_range(config['playlist']['range'])
-                            ytdlp.download(url, range_tuple)
-                        else:
-                            ytdlp.download(url)
+                log_manager.error("Invalid url/path")
+                continue
+
+            for mov in lst:
+                if mov.lower() == 'exit':
+                    break
+                if ytdlp.is_playlist(mov):
+                    range_tuple = get_playlist_range(config['playlist']['range'])
+                    ytdlp.download(mov, range_tuple)
+                else:
+                    ytdlp.download(mov)
         except KeyboardInterrupt:
             log_manager.warning("Operation cancelled by user")
             break
@@ -307,5 +381,6 @@ def main():
     log_manager.info("yt-dlp-music is shutting down")
 
 if __name__ == "__main__":
+    print("Please wait...\n")
     log_manager = LogManager()
     main()
