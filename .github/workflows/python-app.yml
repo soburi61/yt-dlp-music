@@ -28,11 +28,11 @@ jobs:
         pip install pyinstaller
         pip install -r requirements.txt
     - name: Install pyinstaller
-        run: pipenv install
+      run: pipenv install
     - name: Build executable
       run: pyinstaller --onefile yt-dlp-music.py
     - name: Upload artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: artifacts
-          path: ./
+      uses: actions/upload-artifact@v2
+      with:
+        name: artifacts
+        path: ./
