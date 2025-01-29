@@ -206,21 +206,10 @@ class YTDLPManager:
             self.options = options[:start-1] + options[end+1:] +" "+key+" "+value
 
         elif self.type == 1:
-            #_s_neste(self.ydl.params, key, value)
-            #self.ydl._parse_outtmpl()
             self.options.update({
                 key: value
             })
 
-
-def _s_neste(dic, keys, value):
-	key = keys[0]
-	if len(keys) == 1:
-		dic[key] = value
-	else:
-		if key not in dic:
-			dic[key] = {}
-		_s_neste(dic[key], keys[1:], value)
 
 def load_config(file_path: str) -> Dict[str, Any]:
     """設定ファイルを読み込む"""
