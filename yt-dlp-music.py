@@ -13,7 +13,7 @@ import subprocess
 DEFAULT_CONFIG = {
     'common': {
         'path': './out',
-        'formatter': '%(title)s.%(ext)s',
+        'formatter': '%%(title)s.%%(ext)s',
         'path-check': 'true',
         'input': 'download_links_input.txt',
         'input-check': 'true'
@@ -21,7 +21,7 @@ DEFAULT_CONFIG = {
     'yt-dlp': {
         'type': 0,
         'exec': './yt-dlp/yt-dlp.exe',
-        'options': '{}',
+        'options': '--progress --no-quiet --no-warnings --no-part --add-metadata --embed-thumbnail --convert-thumbnails jpg',
         'auto-update': 'true'
     },
     'ffmpeg': {
