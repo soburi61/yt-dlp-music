@@ -14,10 +14,10 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: windows-latest
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python 3.10
+    - name: Set up Python 3.9.7
       uses: actions/setup-python@v3
       with:
         python-version: "3.9.7"
@@ -35,4 +35,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: artifacts
-        path: /dist
+        path: ./dist
